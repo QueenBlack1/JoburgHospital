@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Dashboard | Joburg Hospital</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .dash-section { display: none; }
+    .dash-section.active-section { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .payment-extra { display: none; margin-top: 12px; padding: 16px; background: #f0f9f5; border-radius: 10px; border: 1px solid #c7e2d6; }
+    .payment-extra.show { display: block; }
+  </style>
+</head>
+<body class="dashboard-body">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="images/imageslogo.jpg" alt="Logo" onerror="this.style.display='none'">
+    <h2>Joburg <span>Hospital</span></h2>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav">
+    <a href="#" class="nav-item active" data-section="overview"><i class="fas fa-home"></i> Dashboard</a>
+    <a href="#" class="nav-item" data-section="profile"><i class="fas fa-user"></i> My Profile</a>
+    <a href="#" class="nav-item" data-section="book"><i class="fas fa-calendar-plus"></i> Book Appointment</a>
+    <a href="#" class="nav-item" data-section="appointments"><i class="fas fa-calendar-check"></i> My Appointments</a>
+    <a href="#" class="nav-item" data-section="prescriptions"><i class="fas fa-prescription"></i> Prescriptions</a>
+    <a href="#" class="nav-item" data-section="bills"><i class="fas fa-file-invoice-dollar"></i> Bills</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="userInitials">P</div>
+      <div class="user-details">
+        <h4 id="userName">Patient</h4>
+        <p>Patient</p>
+      </div>
+    </div>
+    <button type="button" class="logout-btn" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="menu-btn" id="menuBtn"><i class="fas fa-bars"></i></button>
+      <div class="page-title">
+        <h1 id="pageTitle">Dashboard</h1>
+        <p>Manage your healthcare</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+
+    <section class="dash-section active-section" id="section-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-info"><h3 id="statAppointments">0</h3><p>My Appointments</p></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fas fa-prescription"></i></div>
+          <div class="stat-info"><h3 id="statPrescriptions">0</h3><p>Prescriptions</p></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange"><i class="fas fa-file-invoice"></i></div>
+          <div class="stat-info"><h3 id="statBills">0</h3><p>Open Bills</p></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fas fa-user"></i></div>
+          <div class="stat-info"><h3 id="statProfile">—</h3><p>Profile status</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Quick actions</h3></div>
+        <div class="card-body">
+          <div class="quick-actions">
+            <a href="#" class="quick-action" data-goto="book"><i class="fas fa-calendar-plus"></i> Book Appointment</a>
+            <a href="#" class="quick-action" data-goto="profile"><i class="fas fa-user-edit"></i> Update Profile</a>
+            <a href="#" class="quick-action" data-goto="appointments"><i class="fas fa-list"></i> View Appointments</a>
+            <a href="#" class="quick-action" data-goto="prescriptions"><i class="fas fa-pills"></i> Prescriptions</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-profile">
+      <div class="card">
+        <div class="card-header">
+          <h3>My Profile</h3>
+          <button type="button" id="editProfileBtn" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> Edit</button>
+        </div>
+
+        <div class="card-body" id="profileView">
+          <div class="profile-grid">
+            <div class="profile-item"><label>ID Number</label><p id="viewIdNumber">—</p></div>
+            <div class="profile-item"><label>Full Name</label><p id="viewFullName">—</p></div>
+            <div class="profile-item"><label>Email</label><p id="viewEmail">—</p></div>
+            <div class="profile-item"><label>Phone</label><p id="viewPhone">—</p></div>
+            <div class="profile-item"><label>Date of Birth</label><p id="viewDob">—</p></div>
+            <div class="profile-item"><label>Gender</label><p id="viewGender">—</p></div>
+            <div class="profile-item"><label>Address</label><p id="viewAddress">—</p></div>
+            <div class="profile-item"><label>Emergency Contact</label><p id="viewEmergency">—</p></div>
+            <div class="profile-item"><label>Blood Group</label><p id="viewBloodGroup">—</p></div>
+            <div class="profile-item"><label>Allergies</label><p id="viewAllergies">—</p></div>
+            <div class="profile-item"><label>Payment Method</label><p id="viewPaymentMethod">—</p></div>
+            <div class="profile-item"><label>Payment Details</label><p id="viewPaymentDetails">—</p></div>
+          </div>
+        </div>
+
+        <div class="card-body" id="profileEdit" style="display:none;">
+          <form id="profileForm">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+              <div class="form-group">
+                <label>ID Number *</label>
+                <input type="text" id="editIdNumber" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="editPhone" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="editFirstName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="editLastName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Date of Birth</label>
+                <input type="date" id="editDob" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Gender</label>
+                <select id="editGender" class="form-control">
+                  <option value="">Select</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Blood Group</label>
+                <input type="text" id="editBloodGroup" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Emergency Contact Name</label>
+                <input type="text" id="editEmergencyName" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Emergency Contact Phone</label>
+                <input type="text" id="editEmergencyPhone" class="form-control">
+              </div>
+            </div>
+            <div class="form-group" style="margin-top:12px;">
+              <label>Address</label>
+              <textarea id="editAddress" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Allergies</label>
+              <textarea id="editAllergies" class="form-control" rows="2"></textarea>
+            </div>
+
+            <div class="form-group" style="margin-top:16px;">
+              <label>Payment Method *</label>
+              <select id="editPaymentMethod" class="form-control" required>
+                <option value="">Select method</option>
+                <option value="Cash">Cash</option>
+                <option value="Medical Aid">Medical Aid</option>
+              </select>
+            </div>
+
+            <div id="cashFields" class="payment-extra">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-group">
+                  <label>Who is responsible for payment? *</label>
+                  <input type="text" id="editPaymentResponsible" class="form-control" placeholder="Full name">
+                </div>
+                <div class="form-group">
+                  <label>Relationship *</label>
+                  <select id="editPaymentRelationship" class="form-control">
+                    <option value="">Select</option>
+                    <option value="Self">Self</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Guardian">Guardian</option>
+                    <option value="Employer">Employer</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div id="medicalAidFields" class="payment-extra">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="form-group">
+                  <label>Medical Aid Name *</label>
+                  <input type="text" id="editMedicalAidName" class="form-control" placeholder="e.g. Discovery Health">
+                </div>
+                <div class="form-group">
+                  <label>Member Number *</label>
+                  <input type="text" id="editMedicalAidNumber" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label>Plan / Option</label>
+                  <input type="text" id="editMedicalAidPlan" class="form-control">
+                </div>
+                <div class="form-group">
+                  <label>Main Member Name</label>
+                  <input type="text" id="editMedicalAidMember" class="form-control">
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-top:20px;">
+              <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save</button>
+              <button type="button" id="cancelProfileBtn" class="btn btn-outline">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-messages">
+      <div class="card">
+        <div class="card-header"><h3>My Messages</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:14px;">
+            Messages you sent via the contact form, and replies from the hospital.
+          </p>
+          <div id="patientMessagesList">
+            <p style="color:#64748B; text-align:center;">No messages yet</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-book">
+      <div class="appointment-center-wrapper">
+        <div class="appointment-card">
+          <div class="appointment-header">
+            <div class="appointment-icon">
+              <i class="fas fa-calendar-check"></i>
+            </div>
+            <div>
+              <h2 class="appointment-title">Book an Appointment</h2>
+              <p class="appointment-subtitle">Choose your doctor, date and preferred time</p>
+            </div>
+          </div>
+
+          <form id="bookForm" class="appointment-form">
+            <div class="form-group">
+              <label for="bookDoctor">
+                <i class="fas fa-user-doctor"></i> Select Doctor *
+              </label>
+              <select id="bookDoctor" class="form-control" required>
+                <option value="">Loading doctors...</option>
+              </select>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="bookDate">
+                  <i class="fas fa-calendar-day"></i> Date *
+                </label>
+                <input type="date" id="bookDate" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label for="bookTime">
+                  <i class="fas fa-clock"></i> Time *
+                </label>
+                <select id="bookTime" class="form-control" required>
+                  <option value="">Select date first</option>
+                </select>
+                <small class="form-hint">Slots every 30 minutes until 17:00</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="bookReason">
+                <i class="fas fa-notes-medical"></i> Reason for visit
+              </label>
+              <textarea
+                id="bookReason"
+                class="form-control"
+                rows="3"
+                placeholder="Briefly describe the reason for your visit..."
+              ></textarea>
+            </div>
+
+            <div class="form-submit-center">
+              <button type="submit" class="btn-appointment">
+                <i class="fas fa-check-circle"></i> Book Appointment
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-appointments">
+      <div class="card">
+        <div class="card-header"><h3>My Appointments</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Doctor</th>
+                  <th>Specialization</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                  <th>Reason</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentsTableBody">
+                <tr><td colspan="6" style="text-align:center;color:#64748B;">No appointments yet</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-prescriptions">
+      <div class="card">
+        <div class="card-header"><h3>My Prescriptions</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rx ID</th>
+                  <th>Doctor</th>
+                  <th>Medication</th>
+                  <th>Dosage</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="prescriptionsTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center;color:#64748B;">No prescriptions yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-bills">
+      <div class="card">
+        <div class="card-header"><h3>My Bills</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Bill #</th>
+                  <th>Doctor</th>
+                  <th>Amount</th>
+                  <th>Payment Type</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="billsTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center;color:#64748B;">No bills yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script src="js/patient-dashboard.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

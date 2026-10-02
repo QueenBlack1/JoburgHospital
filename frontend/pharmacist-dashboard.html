@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pharmacist Dashboard | Joburg Hospital</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .dash-section { display: none; }
+    .dash-section.active-section { display: block; }
+
+    .status-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .status-on-duty { background: #D1FAE5; color: #065F46; }
+    .status-off { background: #FEE2E2; color: #991B1B; }
+    .status-pending { background: #FFEDD5; color: #9A3412; }
+    .status-dispensed { background: #D1FAE5; color: #065F46; }
+
+    .signature-box {
+      border: 1px dashed #CBD5E1;
+      border-radius: 10px;
+      padding: 12px;
+      background: #F8FAFC;
+      max-width: 360px;
+    }
+    .signature-box canvas {
+      width: 100%;
+      height: 140px;
+      background: #fff;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: crosshair;
+      touch-action: none;
+    }
+    .signature-preview {
+      max-width: 220px;
+      max-height: 80px;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-card {
+      background: #fff;
+      width: 100%;
+      max-width: 720px;
+      border-radius: 14px;
+      overflow: hidden;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .modal-header h3 { margin: 0; font-size: 1.05rem; }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .modal-footer {
+      padding: 14px 20px;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 18px;
+      margin-bottom: 16px;
+    }
+    .detail-grid label {
+      display: block;
+      font-size: 0.75rem;
+      color: #64748B;
+      margin-bottom: 2px;
+    }
+    .detail-grid p {
+      margin: 0;
+      font-size: 0.92rem;
+      color: #0F172A;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    .bar-chart {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      height: 240px;
+      padding: 10px 4px 0;
+    }
+    .bar-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .bar-track {
+      width: 100%;
+      max-width: 38px;
+      height: 170px;
+      background: #E8EEF5;
+      border-radius: 10px 10px 4px 4px;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+    }
+    .bar-fill {
+      width: 100%;
+      height: 0%;
+      background: #0B6E4F;
+      border-radius: 10px 10px 0 0;
+      transition: height 0.4s ease;
+    }
+    .bar-value,
+    .bar-label {
+      font-size: 0.75rem;
+      color: #64748B;
+    }
+    .stock-row {
+      display: grid;
+      grid-template-columns: 110px 1fr 40px;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+    .stock-track {
+      height: 14px;
+      background: #E8EEF5;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .stock-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 20px;
+      transition: width 0.4s ease;
+    }
+    .stock-fill.green { background: #10B981; }
+    .stock-fill.orange { background: #F59E0B; }
+    .stock-fill.red { background: #EF4444; }
+
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="dashboard-body">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="images/imageslogo.jpg" alt="Logo" onerror="this.style.display='none'">
+    <h2>Joburg <span>Hospital</span></h2>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-section="overview">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="#" class="nav-item" data-section="profile">
+      <i class="fas fa-user"></i> My Profile
+    </a>
+    <a href="#" class="nav-item" data-section="prescriptions">
+      <i class="fas fa-prescription-bottle"></i> Prescriptions
+    </a>
+    <a href="#" class="nav-item" data-section="dispensed">
+      <i class="fas fa-check-circle"></i> Dispensed
+    </a>
+    <a href="#" class="nav-item" data-section="medicines">
+      <i class="fas fa-pills"></i> Medicines
+    </a>
+    <a href="#" class="nav-item" data-section="sales">
+      <i class="fas fa-cash-register"></i> Pharmacy Sales
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="userInitials">Ph</div>
+      <div class="user-details">
+        <h4 id="userName">Pharmacist</h4>
+        <p>Pharmacist</p>
+      </div>
+    </div>
+    <button type="button" class="logout-btn" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="menu-btn" id="menuBtn">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="page-title">
+        <h1 id="pageTitle">Dashboard</h1>
+        <p>Dispense medication and manage stock</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+
+    <section class="dash-section active-section" id="section-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
+          <div class="stat-info">
+            <h3 id="statPending">0</h3>
+            <p>Pending Prescriptions</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+          <div class="stat-info">
+            <h3 id="statDispensed">0</h3>
+            <p>Dispensed</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fas fa-pills"></i></div>
+          <div class="stat-info">
+            <h3 id="statMedicines">0</h3>
+            <p>Medicines in stock</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fas fa-user-clock"></i></div>
+          <div class="stat-info">
+            <h3 id="statDuty">—</h3>
+            <p>Duty status</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header"><h3>Quick actions</h3></div>
+        <div class="card-body">
+          <div class="quick-actions">
+            <a href="#" class="quick-action" data-goto="prescriptions">
+              <i class="fas fa-prescription-bottle"></i> Pending scripts
+            </a>
+            <a href="#" class="quick-action" data-goto="medicines">
+              <i class="fas fa-pills"></i> Stock
+            </a>
+            <a href="#" class="quick-action" data-goto="sales">
+              <i class="fas fa-cash-register"></i> Sales
+            </a>
+            <a href="#" class="quick-action" data-goto="profile">
+              <i class="fas fa-user-edit"></i> Profile / duty
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="charts-grid">
+        <div class="card">
+          <div class="card-header"><h3>Dispensed This Week</h3></div>
+          <div class="card-body">
+            <div class="bar-chart" id="dispensedBars">
+              <div class="bar-item">
+                <small class="bar-value" data-day="0">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="0" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="0">Mon</span>
+              </div>
+              <div class="bar-item">
+                <small class="bar-value" data-day="1">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="1" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="1">Tue</span>
+              </div>
+              <div class="bar-item">
+                <small class="bar-value" data-day="2">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="2" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="2">Wed</span>
+              </div>
+              <div class="bar-item">
+                <small class="bar-value" data-day="3">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="3" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="3">Thu</span>
+              </div>
+              <div class="bar-item">
+                <small class="bar-value" data-day="4">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="4" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="4">Fri</span>
+              </div>
+              <div class="bar-item">
+                <small class="bar-value" data-day="5">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="5" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="5">Sat</span>
+              </div>
+              <div class="bar-item">
+                <small class="bar-value" data-day="6">0</small>
+                <div class="bar-track"><div class="bar-fill" data-day="6" style="height:0%"></div></div>
+                <span class="bar-label" data-day-label="6">Sun</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>Stock Status</h3></div>
+          <div class="card-body">
+            <div class="stock-row">
+              <span>In Stock</span>
+              <div class="stock-track">
+                <div class="stock-fill green" id="inStockBar" style="width:0%"></div>
+              </div>
+              <strong id="inStockCount">0</strong>
+            </div>
+            <div class="stock-row">
+              <span>Low Stock</span>
+              <div class="stock-track">
+                <div class="stock-fill orange" id="lowStockBar" style="width:0%"></div>
+              </div>
+              <strong id="lowStockCount">0</strong>
+            </div>
+            <div class="stock-row">
+              <span>Out of Stock</span>
+              <div class="stock-track">
+                <div class="stock-fill red" id="outStockBar" style="width:0%"></div>
+              </div>
+              <strong id="outStockCount">0</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-profile">
+      <div class="card">
+        <div class="card-header">
+          <h3>My Profile</h3>
+          <button type="button" id="editProfileBtn" class="btn btn-primary btn-sm">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+        </div>
+
+        <div class="card-body" id="profileView">
+          <div class="profile-grid">
+            <div class="profile-item"><label>Full Name</label><p id="viewFullName">—</p></div>
+            <div class="profile-item"><label>Email</label><p id="viewEmail">—</p></div>
+            <div class="profile-item"><label>Phone</label><p id="viewPhone">—</p></div>
+            <div class="profile-item"><label>License Number</label><p id="viewLicense">—</p></div>
+            <div class="profile-item"><label>Duty Status</label><p id="viewDuty">—</p></div>
+          </div>
+
+          <div style="margin-top:22px;">
+            <label style="font-size:0.85rem; color:#64748B;">Saved Signature</label>
+            <div style="margin-top:8px;">
+              <img id="viewSignature" class="signature-preview" alt="Signature" style="display:none;">
+              <p id="noSignatureText" style="color:#64748B; font-size:0.9rem;">No signature saved yet</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body" id="profileEdit" style="display:none;">
+          <form id="profileForm">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="editFirstName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="editLastName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="editPhone" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>License Number</label>
+                <input type="text" id="editLicense" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Duty Status *</label>
+                <select id="editDuty" class="form-control" required>
+                  <option value="On Duty">On Duty</option>
+                  <option value="Off Duty">Off Duty</option>
+                  <option value="On Leave">On Leave</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;">
+              <label>Signature</label>
+              <p style="font-size:0.82rem; color:#64748B; margin:4px 0 10px;">
+                Draw your signature below. It will be used when dispensing prescriptions.
+              </p>
+              <div class="signature-box">
+                <canvas id="signatureCanvas" width="340" height="140"></canvas>
+                <div style="margin-top:10px; display:flex; gap:8px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="clearSignatureBtn">Clear</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="saveSignatureBtn">Save Signature</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Profile
+              </button>
+              <button type="button" id="cancelProfileBtn" class="btn btn-outline">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-prescriptions">
+      <div class="card">
+        <div class="card-header"><h3>Pending Prescriptions</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:14px;">
+            Review each script before dispensing. Your name and signature will appear under Dispensed by.
+          </p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rx ID</th>
+                  <th>Patient</th>
+                  <th>ID Number</th>
+                  <th>Doctor</th>
+                  <th>Medication</th>
+                  <th>Dosage</th>
+                  <th>Qty</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="pendingRxBody">
+                <tr>
+                  <td colspan="9" style="text-align:center; color:#64748B;">No pending prescriptions</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-dispensed">
+      <div class="card">
+        <div class="card-header"><h3>Dispensed Prescriptions</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rx ID</th>
+                  <th>Patient</th>
+                  <th>Medication</th>
+                  <th>Doctor</th>
+                  <th>Dispensed by</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="dispensedRxBody">
+                <tr>
+                  <td colspan="7" style="text-align:center; color:#64748B;">Nothing dispensed yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-medicines">
+      <div class="card">
+        <div class="card-header">
+          <h3>Medicine Stock</h3>
+          <button type="button" class="btn btn-primary btn-sm" id="addMedicineBtn">
+            <i class="fas fa-plus"></i> Add
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Category</th>
+                  <th>Stock</th>
+                  <th>Reorder level</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="medicinesBody">
+                <tr>
+                  <td colspan="5" style="text-align:center; color:#64748B;">No stock records</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-sales">
+      <div class="card">
+        <div class="card-header"><h3>Pharmacy Sales / Medication Bills</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:14px;">
+            Medication bills created when prescriptions are dispensed. Pharmacy Fee is shown only here.
+          </p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sale #</th>
+                  <th>Patient</th>
+                  <th>ID Number</th>
+                  <th>Pharmacy Fee (R)</th>
+                  <th>Total Amount (R)</th>
+                  <th>Payment Method</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Dispensed by</th>
+                </tr>
+              </thead>
+              <tbody id="pharmacySalesBody">
+                <tr>
+                  <td colspan="9" style="text-align:center; color:#64748B;">No sales yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="modal-overlay" id="rxModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 id="rxModalTitle">Prescription Details</h3>
+    </div>
+
+    <div class="modal-body">
+      <div class="detail-grid">
+        <div>
+          <label>Prescription ID</label>
+          <p id="rxId">—</p>
+        </div>
+        <div>
+          <label>Status</label>
+          <p id="rxStatus">—</p>
+        </div>
+        <div>
+          <label>Patient</label>
+          <p id="rxPatient">—</p>
+        </div>
+        <div>
+          <label>ID Number</label>
+          <p id="rxIdNumber">—</p>
+        </div>
+        <div>
+          <label>Doctor</label>
+          <p id="rxDoctor">—</p>
+        </div>
+        <div>
+          <label>Date</label>
+          <p id="rxDate">—</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:0.75rem; color:#64748B;">Notes</label>
+        <p id="rxNotes" style="margin:4px 0 0;">—</p>
+      </div>
+
+      <h4 style="margin:0 0 10px; font-size:0.95rem;">Medicines</h4>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th>Medicine</th>
+              <th>Dosage</th>
+              <th>Frequency</th>
+              <th>Duration</th>
+              <th>Qty</th>
+            </tr>
+          </thead>
+          <tbody id="rxItemsBody">
+            <tr>
+              <td colspan="5" style="text-align:center; color:#64748B;">No items</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:18px;">
+        <label style="font-size:0.75rem; color:#64748B;">Doctor Signature</label>
+        <div style="margin-top:6px;">
+          <img id="rxDoctorSignature" class="signature-preview" alt="Doctor signature" style="display:none;">
+          <p id="rxNoDoctorSig" style="color:#64748B; font-size:0.85rem;">No doctor signature</p>
+        </div>
+      </div>
+
+      <div id="dispenseSection" style="margin-top:20px; display:none;">
+        <label>Your signature for dispensing</label>
+        <p style="font-size:0.82rem; color:#64748B; margin:4px 0 10px;">
+          Confirm the medicines above, then sign and dispense.
+        </p>
+        <div class="signature-box">
+          <canvas id="dispenseCanvas" width="340" height="140"></canvas>
+          <div style="margin-top:10px;">
+            <button type="button" class="btn btn-outline btn-sm" id="clearDispenseSigBtn">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="dispensedInfo" style="margin-top:18px; display:none;">
+        <div class="detail-grid">
+          <div>
+            <label>Dispensed by</label>
+            <p id="rxDispensedBy">—</p>
+          </div>
+          <div>
+            <label>Dispensed at</label>
+            <p id="rxDispensedAt">—</p>
+          </div>
+        </div>
+        <label style="font-size:0.75rem; color:#64748B;">Pharmacist Signature</label>
+        <div style="margin-top:6px;">
+          <img id="rxDispenserSignature" class="signature-preview" alt="Pharmacist signature" style="display:none;">
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-outline" id="cancelRxModal">Close</button>
+      <button type="button" class="btn btn-primary" id="confirmDispenseBtn" style="display:none;">
+        <i class="fas fa-check"></i> Confirm Dispense
+      </button>
+    </div>
+  </div>
+</div>
+
+<script src="js/pharmacist-dashboard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>

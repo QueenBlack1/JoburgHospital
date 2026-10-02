@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor Dashboard | Joburg Hospital</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .dash-section { display: none; }
+    .dash-section.active-section { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .status-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .status-pending { background: #FFEDD5; color: #9A3412; }
+    .status-confirmed { background: #DBEAFE; color: #1E40AF; }
+    .status-completed { background: #D1FAE5; color: #065F46; }
+    .status-cancelled { background: #FEE2E2; color: #991B1B; }
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      max-width: 520px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 24px;
+      position: relative;
+    }
+    .modal-box.wide { max-width: 720px; }
+    .modal-box.rx-wide { max-width: 780px; }
+    .modal-box h3 { margin: 0 0 16px; color: #0B6E4F; }
+
+    .modal-close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      border: none;
+      background: #f1f5f9;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .medication-row {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr 1fr 1fr 0.7fr 40px;
+      gap: 8px;
+      margin-bottom: 10px;
+      align-items: end;
+    }
+    .medication-row .remove-med-row {
+      width: 100%;
+      padding: 9px 0;
+    }
+
+    .visit-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .visit-option-btn {
+      border: 2px solid #E2E8F0;
+      background: #F8FAFC;
+      border-radius: 12px;
+      padding: 18px 14px;
+      cursor: pointer;
+      text-align: center;
+      transition: 0.2s ease;
+    }
+    .visit-option-btn:hover {
+      border-color: #0B6E4F;
+      background: #ECFDF5;
+    }
+    .visit-option-btn strong {
+      display: block;
+      color: #0F172A;
+      margin-bottom: 4px;
+    }
+    .visit-option-btn span {
+      font-size: 0.85rem;
+      color: #64748B;
+    }
+
+    .signature-preview {
+      max-width: 220px;
+      max-height: 80px;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    @media (max-width: 700px) {
+      .medication-row { grid-template-columns: 1fr; }
+      .visit-options { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="dashboard-body">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="images/imageslogo.jpg" alt="Logo" onerror="this.style.display='none'">
+    <h2>Joburg <span>Hospital</span></h2>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-section="overview">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="#" class="nav-item" data-section="profile">
+      <i class="fas fa-user-md"></i> My Profile
+    </a>
+    <a href="#" class="nav-item" data-section="appointments">
+      <i class="fas fa-calendar-check"></i> Appointments
+    </a>
+    <a href="#" class="nav-item" data-section="patients">
+      <i class="fas fa-users"></i> My Patients
+    </a>
+    <a href="#" class="nav-item" data-section="prescriptions">
+      <i class="fas fa-prescription"></i> Prescriptions
+    </a>
+    <a href="#" class="nav-item" data-section="invoices">
+      <i class="fas fa-file-invoice-dollar"></i> Invoices
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="userInitials">D</div>
+      <div class="user-details">
+        <h4 id="userName">Doctor</h4>
+        <p>Doctor</p>
+      </div>
+    </div>
+    <button type="button" class="logout-btn" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="menu-btn" id="menuBtn">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="page-title">
+        <h1 id="pageTitle">Dashboard</h1>
+        <p>Manage appointments, patients and prescriptions</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+
+    <section class="dash-section active-section" id="section-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fas fa-calendar-day"></i></div>
+          <div class="stat-info">
+            <h3 id="statToday">0</h3>
+            <p>Today's Appointments</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+          <div class="stat-info">
+            <h3 id="statPatients">0</h3>
+            <p>My Patients</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange"><i class="fas fa-prescription"></i></div>
+          <div class="stat-info">
+            <h3 id="statRx">0</h3>
+            <p>Prescriptions Issued</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fas fa-file-invoice"></i></div>
+          <div class="stat-info">
+            <h3 id="statInvoices">0</h3>
+            <p>Invoices</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:24px;">
+        <div class="card-header"><h3>Patients Seen This Week</h3></div>
+        <div class="card-body" style="height:280px; position:relative;">
+          <canvas id="doctorPatientsChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-profile">
+      <div class="card">
+        <div class="card-header">
+          <h3>My Profile</h3>
+          <button type="button" id="editProfileBtn" class="btn btn-primary btn-sm">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+        </div>
+
+        <div class="card-body" id="profileView">
+          <div class="profile-grid">
+            <div class="profile-item"><label>Full Name</label><p id="viewFullName">—</p></div>
+            <div class="profile-item"><label>Email</label><p id="viewEmail">—</p></div>
+            <div class="profile-item"><label>Phone</label><p id="viewPhone">—</p></div>
+            <div class="profile-item"><label>Specialization</label><p id="viewSpecialization">—</p></div>
+            <div class="profile-item"><label>Qualification</label><p id="viewQualification">—</p></div>
+            <div class="profile-item"><label>Registration No.</label><p id="viewRegNumber">—</p></div>
+            <div class="profile-item"><label>1st Visit Fee (R)</label><p id="viewFeeFirst">—</p></div>
+            <div class="profile-item"><label>Follow-up Fee (R)</label><p id="viewFeeFollowUp">—</p></div>
+            <div class="profile-item"><label>Availability</label><p id="viewAvailability">—</p></div>
+          </div>
+
+          <div style="margin-top:22px;">
+            <label style="font-size:0.85rem; color:#64748B;">Saved Signature</label>
+            <div style="margin-top:8px;">
+              <img id="viewSignature" class="signature-preview" alt="Signature" style="display:none;">
+              <p id="noSignatureText" style="color:#64748B; font-size:0.9rem;">No signature saved yet</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-body" id="profileEdit" style="display:none;">
+          <form id="profileForm">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="editFirstName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="editLastName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="editPhone" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Specialization</label>
+                <input type="text" id="editSpecialization" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Qualification</label>
+                <input type="text" id="editQualification" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Registration No.</label>
+                <input type="text" id="editRegNumber" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>1st Visit Fee (R)</label>
+                <input type="number" id="editFeeFirst" class="form-control" min="0" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Follow-up Fee (R)</label>
+                <input type="number" id="editFeeFollowUp" class="form-control" min="0" step="0.01">
+              </div>
+              <div class="form-group">
+                <label>Availability</label>
+                <select id="editAvailability" class="form-control">
+                  <option value="Available">Available</option>
+                  <option value="Unavailable">Unavailable</option>
+                  <option value="On Leave">On Leave</option>
+                </select>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;">
+              <label>Signature</label>
+              <p style="font-size:0.82rem; color:#64748B; margin:4px 0 10px;">
+                Draw your signature below. It will be added to prescriptions you issue.
+              </p>
+              <div style="border:1px dashed #CBD5E1; border-radius:10px; padding:12px; background:#F8FAFC; max-width:360px;">
+                <canvas id="doctorSignatureCanvas" width="340" height="140"
+                        style="width:100%; height:140px; background:#fff; border:1px solid #E2E8F0; border-radius:8px; cursor:crosshair; touch-action:none;"></canvas>
+                <div style="margin-top:10px; display:flex; gap:8px;">
+                  <button type="button" class="btn btn-outline btn-sm" id="clearDoctorSignatureBtn">Clear</button>
+                  <button type="button" class="btn btn-primary btn-sm" id="saveDoctorSignatureBtn">Save Signature</button>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Profile
+              </button>
+              <button type="button" id="cancelProfileBtn" class="btn btn-outline">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-appointments">
+      <div class="card">
+        <div class="card-header"><h3>My Appointments</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:14px;">
+            When completing an appointment, select <strong>First Visit</strong> or <strong>Second Visit</strong>.
+            Admin uses this when generating the invoice amount.
+          </p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>ID Number</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Reason</th>
+                  <th>Visit type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentsTableBody">
+                <tr>
+                  <td colspan="8" style="text-align:center; color:#64748B;">No appointments</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-patients">
+      <div class="card">
+        <div class="card-header"><h3>My Patients</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:16px;">
+            Patients who have booked an appointment with you.
+          </p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>ID Number</th>
+                  <th>Phone</th>
+                  <th>Email</th>
+                  <th>Payment Method</th>
+                  <th>Visits</th>
+                </tr>
+              </thead>
+              <tbody id="patientsTableBody">
+                <tr>
+                  <td colspan="6" style="text-align:center; color:#64748B;">No patients yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-prescriptions">
+      <div class="card">
+        <div class="card-header">
+          <h3>Issued Prescriptions</h3>
+          <button type="button" class="btn btn-primary btn-sm" id="openRxModal">
+            <i class="fas fa-plus"></i> Issue Prescription
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Rx ID</th>
+                  <th>Patient</th>
+                  <th>Medication</th>
+                  <th>Dosage</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="rxTableBody">
+                <tr>
+                  <td colspan="6" style="text-align:center; color:#64748B;">No prescriptions issued</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-invoices">
+      <div class="card">
+        <div class="card-header"><h3>Invoices (after visits)</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Patient</th>
+                  <th>Date</th>
+                  <th>Amount (R)</th>
+                  <th>Payment Method</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="invoicesTableBody">
+                <tr>
+                  <td colspan="6" style="text-align:center; color:#64748B;">No invoices yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<div class="modal-backdrop" id="visitModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="btnCancelVisit">
+      <i class="fas fa-times"></i>
+    </button>
+    <h3>Select visit type</h3>
+    <p style="margin:0 0 8px; color:#64748B; font-size:0.92rem;">
+      Choose the visit type for this appointment. Admin will use this when generating the invoice.
+    </p>
+    <div class="visit-options">
+      <button type="button" class="visit-option-btn" id="btnFirstVisit">
+        <strong>First Visit</strong>
+        <span>Standard consultation fee</span>
+      </button>
+      <button type="button" class="visit-option-btn" id="btnSecondVisit">
+        <strong>Second Visit</strong>
+        <span>Follow-up consultation fee</span>
+      </button>
+    </div>
+    <div style="display:flex; justify-content:flex-end; margin-top:18px;">
+      <button type="button" class="btn btn-outline" id="btnCancelVisitFooter">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="rxModal">
+  <div class="modal-box rx-wide">
+    <button type="button" class="modal-close" id="closeRxModal">
+      <i class="fas fa-times"></i>
+    </button>
+    <h3>Issue Prescription</h3>
+
+    <form id="rxForm">
+      <div class="form-group">
+        <label for="rxPatient">Patient *</label>
+        <select id="rxPatient" class="form-control" required>
+          <option value="">Select patient</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label style="display:flex; justify-content:space-between; align-items:center;">
+          <span>Medications *</span>
+          <button type="button" class="btn btn-outline btn-sm" id="addMedicationRow">
+            <i class="fas fa-plus"></i> Add Medication
+          </button>
+        </label>
+
+        <div id="medicationsContainer">
+          <div class="medication-row">
+            <div>
+              <select class="form-control med-name" required>
+                <option value="">Select medicine</option>
+              </select>
+            </div>
+            <div>
+              <input type="text" class="form-control med-dosage" placeholder="Dosage e.g. 500mg" required>
+            </div>
+            <div>
+              <input type="text" class="form-control med-frequency" placeholder="Frequency e.g. 3x daily" required>
+            </div>
+            <div>
+              <input type="text" class="form-control med-duration" placeholder="Duration e.g. 5 days" required>
+            </div>
+            <div>
+              <input type="text" class="form-control med-qty" placeholder="Qty" required>
+            </div>
+            <div>
+              <button type="button" class="btn btn-outline btn-sm remove-med-row" title="Remove">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="rxInstructions">Instructions</label>
+        <textarea id="rxInstructions" class="form-control" rows="3"
+                  placeholder="e.g. Take after meals with water..."></textarea>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:20px;">
+        <button type="button" class="btn btn-outline" id="cancelRxModal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-prescription"></i> Issue Prescription
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="clinicalNotesModal">
+  <div class="modal-box wide">
+    <button type="button" class="modal-close" id="closeClinicalNotesModal">
+      <i class="fas fa-times"></i>
+    </button>
+    <h3 id="clinicalNotesTitle">Clinical Notes</h3>
+    <p style="margin:-8px 0 20px; color:#64748B; font-size:0.9rem;" id="clinicalNotesPatient"></p>
+
+    <form id="clinicalNotesForm">
+      <input type="hidden" id="clinicalAppointmentId">
+
+      <div class="form-group">
+        <label for="assessmentDiagnosis">Assessment / Diagnosis</label>
+        <textarea class="form-control" id="assessmentDiagnosis" rows="3"
+                  placeholder="Doctor evaluation of the condition..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="investigations">Investigations</label>
+        <textarea class="form-control" id="investigations" rows="3"
+                  placeholder="Lab tests, blood work, or imaging..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="encounterMedications">Medications</label>
+        <textarea class="form-control" id="encounterMedications" rows="3"
+                  placeholder="Drugs, dosages, treatments..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="managementPlan">Management Plan</label>
+        <textarea class="form-control" id="managementPlan" rows="3"
+                  placeholder="Follow-up instructions..."></textarea>
+      </div>
+
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:24px;">
+        <button type="button" class="btn btn-outline" id="cancelClinicalNotes">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Save Notes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/doctor-dashboard.js"></script>
+</body>
+</html>

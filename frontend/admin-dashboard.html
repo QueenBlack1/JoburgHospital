@@ -1,0 +1,461 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Joburg Hospital</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <style>
+    .dash-section { display: none; }
+    .dash-section.active-section { display: block; animation: fadeIn 0.35s ease; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .status-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 600;
+    }
+    .status-available, .status-on-duty { background: #D1FAE5; color: #065F46; }
+    .status-unavailable, .status-off { background: #FEE2E2; color: #991B1B; }
+    .status-on-leave { background: #FFEDD5; color: #9A3412; }
+    .status-new { background: #DBEAFE; color: #1E40AF; }
+    .status-read { background: #E0E7FF; color: #3730A3; }
+    .status-replied { background: #D1FAE5; color: #065F46; }
+  </style>
+</head>
+<body class="dashboard-body">
+
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <img src="images/imageslogo.jpg" alt="Logo" onerror="this.style.display='none'">
+    <h2>Joburg <span>Hospital</span></h2>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a href="#" class="nav-item active" data-section="overview">
+      <i class="fas fa-home"></i> Dashboard
+    </a>
+    <a href="#" class="nav-item" data-section="profile">
+      <i class="fas fa-user-shield"></i> My Profile
+    </a>
+    <a href="#" class="nav-item" data-section="messages">
+      <i class="fas fa-envelope"></i> Messages
+    </a>
+    <a href="#" class="nav-item" data-section="doctors">
+      <i class="fas fa-user-md"></i> Doctors
+    </a>
+    <a href="#" class="nav-item" data-section="pharmacists">
+      <i class="fas fa-pills"></i> Pharmacists
+    </a>
+    <a href="#" class="nav-item" data-section="patients">
+      <i class="fas fa-user-injured"></i> Patients
+    </a>
+    <a href="#" class="nav-item" data-section="appointments">
+      <i class="fas fa-calendar-check"></i> Appointments
+    </a>
+    <a href="#" class="nav-item" data-section="invoices">
+      <i class="fas fa-file-invoice-dollar"></i> Invoices
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="userInitials">A</div>
+      <div class="user-details">
+        <h4 id="userName">Admin</h4>
+        <p>Administrator</p>
+      </div>
+    </div>
+    <button type="button" class="logout-btn" id="logoutBtn">
+      <i class="fas fa-sign-out-alt"></i> Logout
+    </button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="main-content">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="menu-btn" id="menuBtn">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="page-title">
+        <h1 id="pageTitle">Dashboard</h1>
+        <p>Hospital system overview</p>
+      </div>
+    </div>
+  </header>
+
+  <div class="dashboard-content">
+
+    <section class="dash-section active-section" id="section-overview">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fas fa-user-injured"></i></div>
+          <div class="stat-info">
+            <h3 id="statPatients">0</h3>
+            <p>Patients</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fas fa-user-md"></i></div>
+          <div class="stat-info">
+            <h3 id="statDoctors">0</h3>
+            <p>Doctors</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fas fa-pills"></i></div>
+          <div class="stat-info">
+            <h3 id="statPharmacists">0</h3>
+            <p>Pharmacists</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange"><i class="fas fa-calendar-check"></i></div>
+          <div class="stat-info">
+            <h3 id="statAppointments">0</h3>
+            <p>Appointments</p>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-top:24px;">
+        <div class="card">
+          <div class="card-header"><h3>Appointments (This Week)</h3></div>
+          <div class="card-body" style="height:280px; position:relative;">
+            <canvas id="appointmentsChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Doctors by Department</h3></div>
+          <div class="card-body" style="height:280px; position:relative;">
+            <canvas id="departmentsChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-profile">
+      <div class="card">
+        <div class="card-header">
+          <h3>My Profile</h3>
+          <button type="button" id="editProfileBtn" class="btn btn-primary btn-sm">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+        </div>
+
+        <div class="card-body" id="profileView">
+          <div class="profile-grid">
+            <div class="profile-item"><label>Full Name</label><p id="viewFullName">—</p></div>
+            <div class="profile-item"><label>Email</label><p id="viewEmail">—</p></div>
+            <div class="profile-item"><label>Phone</label><p id="viewPhone">—</p></div>
+            <div class="profile-item"><label>Department</label><p id="viewDepartment">—</p></div>
+            <div class="profile-item"><label>Employee Number</label><p id="viewEmployeeNo">—</p></div>
+          </div>
+        </div>
+
+        <div class="card-body" id="profileEdit" style="display:none;">
+          <form id="profileForm">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+              <div class="form-group">
+                <label>First Name *</label>
+                <input type="text" id="editFirstName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Last Name *</label>
+                <input type="text" id="editLastName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label>Phone</label>
+                <input type="text" id="editPhone" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Department</label>
+                <input type="text" id="editDepartment" class="form-control">
+              </div>
+              <div class="form-group">
+                <label>Employee Number</label>
+                <input type="text" id="editEmployeeNo" class="form-control">
+              </div>
+            </div>
+            <div style="display:flex; gap:12px; margin-top:20px;">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save
+              </button>
+              <button type="button" id="cancelProfileBtn" class="btn btn-outline">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-messages">
+      <div class="card">
+        <div class="card-header"><h3>Contact Messages</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="messagesBody">
+                <tr>
+                  <td colspan="7" style="text-align:center;color:#64748B;">No messages yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="msgModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:3000; align-items:center; justify-content:center; padding:16px;">
+      <div style="background:#fff; width:100%; max-width:640px; border-radius:14px; max-height:90vh; overflow:auto;">
+        <div style="padding:16px 20px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; font-size:1.05rem;">Message Details</h3>
+          <button type="button" class="btn btn-outline btn-sm" id="closeMsgModal">Close</button>
+        </div>
+        <div style="padding:20px;">
+          <p><strong>From:</strong> <span id="msgFrom">—</span></p>
+          <p><strong>Email:</strong> <span id="msgEmail">—</span></p>
+          <p><strong>Subject:</strong> <span id="msgSubject">—</span></p>
+          <p><strong>Date:</strong> <span id="msgDate">—</span></p>
+          <p style="margin-top:12px;"><strong>Message:</strong></p>
+          <div id="msgBody" style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:12px; margin-bottom:16px; white-space:pre-wrap;"></div>
+
+          <div id="existingReplyBox" style="display:none; margin-bottom:16px;">
+            <p><strong>Admin reply:</strong></p>
+            <div id="existingReply" style="background:#ECFDF5; border:1px solid #A7F3D0; border-radius:10px; padding:12px; white-space:pre-wrap;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="adminReplyText"><strong>Your reply</strong></label>
+            <textarea id="adminReplyText" class="form-control" rows="4" placeholder="Type your reply to the patient..."></textarea>
+          </div>
+        </div>
+        <div style="padding:14px 20px; border-top:1px solid #E2E8F0; display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" class="btn btn-outline" id="cancelMsgModal">Cancel</button>
+          <button type="button" class="btn btn-primary" id="sendReplyBtn">
+            <i class="fas fa-paper-plane"></i> Send Reply
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <section class="dash-section" id="section-doctors">
+      <div class="card">
+        <div class="card-header"><h3>Doctors List</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:14px;">
+            Availability: <strong>Available</strong>, <strong>Unavailable</strong>, or <strong>On Leave</strong>
+          </p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Doctor</th>
+                  <th>Specialization</th>
+                  <th>Phone</th>
+                  <th>1st Visit Fee</th>
+                  <th>Follow-up Fee</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="doctorsTableBody">
+                <tr>
+                  <td colspan="6" style="text-align:center; color:#64748B;">No doctors found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-pharmacists">
+      <div class="card">
+        <div class="card-header"><h3>Pharmacists List</h3></div>
+        <div class="card-body">
+          <p style="color:#64748B; font-size:0.9rem; margin-bottom:14px;">
+            Duty status: <strong>On Duty</strong> or <strong>Off</strong>
+          </p>
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>License</th>
+                  <th>Duty status</th>
+                </tr>
+              </thead>
+              <tbody id="pharmacistsTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center; color:#64748B;">No pharmacists found</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-patients">
+      <div class="card">
+        <div class="card-header"><h3>All Patients</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>ID Number</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Payment Method</th>
+                </tr>
+              </thead>
+              <tbody id="patientsTableBody">
+                <tr>
+                  <td colspan="5" style="text-align:center; color:#64748B;">No patient data yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-appointments">
+      <div class="card">
+        <div class="card-header"><h3>All Appointments</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Doctor</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Payment</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentsTableBody">
+                <tr>
+                  <td colspan="7" style="text-align:center; color:#64748B;">No appointments</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dash-section" id="section-invoices">
+      <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h3>All Invoices</h3>
+          <button type="button" class="btn btn-primary btn-sm" id="openGenerateBillBtn">
+            <i class="fas fa-file-invoice"></i> Generate Bill
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Patient</th>
+                  <th>Consultation (R)</th>
+                  <th>Pharmacy (R)</th>
+                  <th>Total (R)</th>
+                  <th>Status</th>
+                  <th>Update</th>
+                </tr>
+              </thead>
+              <tbody id="invoicesTableBody">
+                <tr>
+                  <td colspan="7" style="text-align:center; color:#64748B;">No invoices yet</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div id="generateBillModal" style="display:none; position:fixed; inset:0; background:rgba(15,23,42,0.45); z-index:3000; align-items:center; justify-content:center; padding:16px;">
+      <div style="background:#fff; width:100%; max-width:560px; border-radius:14px; max-height:90vh; overflow:auto;">
+        <div style="padding:16px 20px; border-bottom:1px solid #E2E8F0; display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="margin:0; font-size:1.05rem;">Generate Bill</h3>
+          <button type="button" class="btn btn-outline btn-sm" id="closeGenerateBillModal">Close</button>
+        </div>
+
+        <div style="padding:20px;">
+          <div class="form-group">
+            <label>Select Completed Appointment *</label>
+            <select id="billAppointmentSelect" class="form-control">
+              <option value="">Loading appointments...</option>
+            </select>
+          </div>
+
+          <div style="margin-top:16px; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:14px;">
+            <p style="margin:0 0 8px;"><strong>Patient:</strong> <span id="billPatientName">—</span></p>
+            <p style="margin:0 0 8px;"><strong>Doctor:</strong> <span id="billDoctorName">—</span></p>
+            <p style="margin:0 0 8px;"><strong>Visit Type:</strong> <span id="billVisitType">—</span></p>
+            <hr style="margin:12px 0; border:none; border-top:1px solid #E2E8F0;">
+            <p style="margin:0 0 6px;"><strong>Consultation Fee:</strong> R <span id="billConsultationFee">0.00</span></p>
+            <p style="margin:0 0 6px;"><strong>Pharmacy Fee:</strong> R <span id="billPharmacyFee">0.00</span></p>
+            <p style="margin:0; font-size:1.1rem;"><strong>Total:</strong> R <span id="billTotalAmount">0.00</span></p>
+          </div>
+
+          <div class="form-group" style="margin-top:16px;">
+            <label>Payment Method</label>
+            <select id="billPaymentMethod" class="form-control">
+              <option value="Cash">Cash</option>
+              <option value="Card">Card</option>
+              <option value="Medical Aid">Medical Aid</option>
+              <option value="EFT">EFT</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="padding:14px 20px; border-top:1px solid #E2E8F0; display:flex; gap:10px; justify-content:flex-end;">
+          <button type="button" class="btn btn-outline" id="cancelGenerateBill">Cancel</button>
+          <button type="button" class="btn btn-primary" id="confirmGenerateBillBtn">
+            <i class="fas fa-check"></i> Generate Invoice
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/admin-dashboard.js"></script>
+<script src="js/auth.js"></script>
+</body>
+</html>
